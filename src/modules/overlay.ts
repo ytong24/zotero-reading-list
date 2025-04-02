@@ -63,6 +63,7 @@ function setItemReadStatus(item: Zotero.Item, statusName: string) {
 		READ_DATE_EXTRA_FIELD,
 		new Date(Date.now()).toISOString(),
 	);
+	manageReadStatusTags(item, statusName);
 	void item.saveTx();
 }
 
@@ -81,6 +82,7 @@ function clearSelectedItemsReadStatus() {
 	for (const item of items) {
 		clearItemExtraProperty(item, READ_STATUS_EXTRA_FIELD);
 		clearItemExtraProperty(item, READ_DATE_EXTRA_FIELD);
+		manageReadStatusTags(item, ""); // Pass empty string to just remove tags
 		void item.saveTx();
 	}
 }
@@ -90,6 +92,27 @@ function clearSelectedItemsReadStatus() {
  */
 function getSelectedItems() {
 	return ZoteroPane.getSelectedItems().filter((item) => item.isRegularItem());
+}
+
+function manageReadStatusTags(item: Zotero.Item, statusName: string) {
+	// Get current tags
+	const tags = item.getTags();
+
+	// Filter out old read status tags
+	const filteredTags = tags.filter(
+		(tag) => !tag.tag.startsWith("read_status_"),
+	);
+
+	// Add new read status tag if status is not empty
+	if (statusName) {
+		filteredTags.push({
+			tag: `read_status_${statusName}`,
+			type: 0, // Regular tag type
+		});
+	}
+
+	// Set the new tags
+	item.setTags(filteredTags);
 }
 
 export const FORBIDDEN_PREF_STRING_CHARACTERS = new Set(";|");
